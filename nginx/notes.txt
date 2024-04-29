@@ -1,0 +1,1 @@
+customize server_name and root as needed, need to remove config made by certbot and re-initialize using certbot command
