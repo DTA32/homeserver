@@ -1,1 +1,2 @@
-customize server_name and root as needed, need to remove config made by certbot and re-initialize using certbot command
+- customize server_name and root as needed, need to re-initialize ssl by using certbot command
+- node.js or next.js server need to started by pm2 first

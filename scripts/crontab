@@ -1,2 +1,2 @@
 0 * * * * /usr/bin/python3 /usr/local/bin/scripts/update_dns.py >> /var/log/update_dns.log
-0 0 * * * /usr/local/bin/scripts/daily-cleanup-PROJECT_NAME.sh >> /var/log/daily-cleanup-PROJECT_NAME.log
+0 17 * * * /usr/local/bin/scripts/daily-cleanup-PROJECT_NAME.sh >> /var/log/daily-cleanup-PROJECT_NAME.log

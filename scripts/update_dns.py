@@ -4,67 +4,81 @@
 
 import requests
 import json
-import os
+import env
 from datetime import datetime
 
-print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' - update_dns.py start')
-# Cloudflare API key
-cf_api_key = os.environ.get('CF_API_KEY')
-# Cloudflare email
-cf_email = os.environ.get('CF_EMAIL')
-# Zone ID
-zone_id = os.environ.get('ZONE_ID')
-# DNS record ID
-dns_record_id_raw = os.environ.get('DNS_RECORD_ID')
-dns_record_id = dns_record_id_raw.split(',')
-# DNS record name
-dns_record_name_raw = os.environ.get('DNS_RECORD_NAME')
-dns_record_name = dns_record_name_raw.split(',')
+settings = {
+    'ip_info': env.IP_INFO,
+    'webhook_url': env.WEBHOOK_URL,
+    'cf_api_key': env.CF_API_KEY,
+    'cf_email': env.CF_EMAIL,
+    'zone_id': env.ZONE_ID,
+    'dns_record': env.DNS_RECORD
+}
 
-if(cf_api_key == None or cf_email == None or zone_id == None or dns_record_id_raw == None or dns_record_name_raw == None):
-    print('Environment variables are not set')
-    exit()
-
-# Get current public IP address
-public_ip_response = requests.get('https://api.ipify.org')
-if(public_ip_response.status_code != 200):
-    print('Failed to get public IP address, check internet connection!')
-    exit()
-public_ip = public_ip_response.text
-
-# Update DNS record with current public IP address
-for i in range(len(dns_record_id)):
-    url_get = 'https://api.cloudflare.com/client/v4/zones/' + zone_id + '/dns_records/' + dns_record_id[i]
-    headers_get = {
-        'X-Auth-Email': cf_email,
-        'X-Auth-Key': cf_api_key,
-        'Content-Type': 'application/json'
-    }
-    response_get = requests.get(url_get, headers=headers_get)
-    response_json = response_get.json()
-    if response_json['result']['content'] == public_ip:
-        print(i + '. IP address is up to date')
-        continue
-
-    url = 'https://api.cloudflare.com/client/v4/zones/' + zone_id + '/dns_records/' + dns_record_id[i]
-    headers = {
-        'X-Auth-Email': cf_email,
-        'X-Auth-Key': cf_api_key,
-        'Content-Type': 'application/json'
-    }
+def logger(message):
+    # specifically created to post to discord webhook
+    username = 'update-dns.py'
+    webhook_url = settings['webhook_url']
+    # reminder to myself: to export this, turn username and webhook into function params
     data = {
-        'type': 'A',
-        'name': dns_record_name[i],
-        'content': public_ip,
-        'ttl': 1,
-        'proxied': False
+        'content': message,
+        'username': username,
     }
-    response = requests.put(url, headers=headers, data=json.dumps(data))
+    response = requests.post(webhook_url, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+    # log to local if failed to log to webhook
+    if response.status_code != 204:
+        print(username + ' - failed to log to webhook - ' + response.text)
+        print(message)
 
-    if response.status_code == 200:
-        print(i + '. DNS record updated successfully')
-    else:
-        print(i + '. Failed to update DNS record')
-        print(response.text)
+def main():
+    for key, value in settings.items():
+        if value == None:
+            logger(message=f'ERR: {key} is not set')
+            exit()
+    start = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    logger(message=f'{start} - start')
 
-print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' - update_dns.py finish')
+    # Get current public IP address
+    public_ip_response = requests.get(settings['ip_info'])
+    if(public_ip_response.status_code != 200):
+        logger(message=f'ERR: Failed to get public IP address, check internet connection!')
+        exit()
+    public_ip = public_ip_response.text
+
+    # Update DNS record with current public IP address
+    i = 1
+    for record in settings['dns_record']:
+        url_get = 'https://api.cloudflare.com/client/v4/zones/' + settings['zone_id'] + '/dns_records/' + record['id']
+        headers = {
+            'X-Auth-Email': settings['cf_email'],
+            'X-Auth-Key': settings['cf_api_key'],
+            'Content-Type': 'application/json'
+        }
+        response_get = requests.get(url_get, headers=headers)
+        response_json = response_get.json()
+        # skip if still up to date, and update if not
+        if response_json['result']['content'] == public_ip:
+            logger(message=f'{i}. {record["name"]} - DNS record is up to date')
+        else:
+            url = 'https://api.cloudflare.com/client/v4/zones/' + settings['zone_id'] + '/dns_records/' + record['id']
+            data = {
+                'type': 'A',
+                'name': record['name'],
+                'content': public_ip,
+                'proxied': record['proxied'],
+            }
+            response = requests.put(url, headers=headers, data=json.dumps(data))
+
+            if response.status_code == 200:
+                logger(f'{i}. {record["name"]} - DNS record updated successfully')
+            else:
+                logger(f'{i}. {record["name"]} - Failed to update DNS record')
+                logger(f'Reason: {response.text}')
+        i += 1
+
+    end = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    logger(f'{end} - finish')
+
+if __name__ == '__main__':
+    main()
