@@ -1,0 +1,3 @@
+url: http://127.0.0.1:8080
+tunnel: <TUNNEL-ID>
+credentials-file: /data/data/com.termux/files/home/.cloudflared/<TUNNEL-ID>.json

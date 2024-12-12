@@ -30,7 +30,7 @@ enabled = true
 # Note: Use secrets to store sensitive data.
 # - https://developers.cloudflare.com/workers/configuration/secrets/
  [vars]
- WAKE_ENDPOINT = "https://rnote4x-termux.tailb50aa1.ts.net/wake"
+ WAKE_ENDPOINT = "https://note4x.dta32.my.id/wake"
 
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai

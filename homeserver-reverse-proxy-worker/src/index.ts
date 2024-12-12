@@ -1,4 +1,4 @@
-const error_html: string = `<!DOCTYPE html>
+const waiting_room_html: string = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -49,9 +49,9 @@ const error_html: string = `<!DOCTYPE html>
                 <h2 style="font-size: 48px">Server Down</h2>
                 <div style="display: flex; flex-direction: column; gap: 24px">
                     <p style="font-size: 24px">
-                        My server currently down, I'm trying to wake it up now.
+                        Oh no, looks like my server is down, gonna try to wake it up now.
                     </p>
-                    <p style="font-size: 24px">Will redirect you in a moment, please wait.</p>
+                    <p style="font-size: 20px">It will be alive in a moment and i&apos;ll redirect you automatically, please wait.</p>
                 </div>
             </div>
             <h3 style="font-size: 24px">— DTA32</h3>
@@ -62,31 +62,39 @@ const error_html: string = `<!DOCTYPE html>
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		const wakeEndpoint = env.WAKE_ENDPOINT;
+		// validate request
+		if(!request.url.includes("dta32.my.id")){
+			console.warn("Suspicious access from ", request.url);
+			return new Response(
+				"Where are you from? This worker is only accessible from dta32.my.id subdomain.",
+				{ headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" }, status: 403 }
+			);
+		}
 
+		// ƒorward main server response, if server is reachable
 		try {
 			const response = await fetch(request);
-
-			if (response.status != 530) {
+			if (response.status != 530 && response.status != 502) {
 				return response;
 			}
 		} catch (error) {
 			console.error("Error reaching main server:", error);
 		}
 
+		// trigger WOL and return waiting room if response is from argo tunnel indicating server down
+		const wakeEndpoint = env.WAKE_ENDPOINT;
 		try {
 			console.debug("Triggering Wake-on-LAN...");
-			await fetch(wakeEndpoint, { method: "GET", headers: { "Content-Type": "application/json", "X-API-KEY": env.API_KEY } });
+			await fetch(
+				wakeEndpoint,
+				{ method: "GET", headers: { "Content-Type": "application/json", "X-API-KEY": env.API_KEY } }
+			);
 		} catch (error) {
 			console.error("Error triggering WOL:", error);
 		}
-
-		return new Response(error_html, {
-			headers: {
-				"Content-Type": "text/html",
-				"Cache-Control": "no-store",
-			},
-			status: 200,
-		});
+		return new Response(
+			waiting_room_html,
+			{ headers: { "Content-Type": "text/html", "Cache-Control": "no-store" }, status: 200 }
+		);
 	},
 } satisfies ExportedHandler<Env>;
