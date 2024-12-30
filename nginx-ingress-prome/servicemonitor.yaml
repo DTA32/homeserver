@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-prom-stack-nginx-ingress-microk8s
+  namespace: observability
+  annotations:
+    meta.helm.sh/release-name: kube-prom-stack
+    meta.helm.sh/release-namespace: observability
+  labels:
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/instance: kube-prom-stack
+    app.kubernetes.io/name: nginx-ingress-microk8s
+    app.kubernetes.io/part-of: nginx-ingress-microk8s
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      microk8s-application: nginx-ingress-microk8s
+  endpoints:
+    - port: health
+      path: /metrics
+      interval: 5s
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - ingress
+      - observability
+      - kube-system
+      - default

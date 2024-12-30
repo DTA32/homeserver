@@ -56,6 +56,7 @@ const waiting_room_html: string = `<!DOCTYPE html>
             </div>
             <h3 style="font-size: 24px">— DTA32</h3>
         </main>
+        <small style="position: absolute; bottom: 12px; right: 12px; color: #f5f5f4">yep, this server is on-demand</small>
     </body>
 </html>
 `
@@ -63,10 +64,25 @@ const waiting_room_html: string = `<!DOCTYPE html>
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		// validate request
-		if(!request.url.includes("dta32.my.id")){
-			console.warn("Suspicious access from ", request.url);
+		const requestUrl = new URL(request.url);
+		if(!requestUrl.host.includes("dta32.my.id")){
+			console.debug("Suspicious request to ", request.url);
 			return new Response(
 				"Where are you from? This worker is only accessible from dta32.my.id subdomain.",
+				{ headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" }, status: 403 }
+			);
+		}
+		if(requestUrl.port != ""){
+			console.debug("Suspicious request to: ", request.url);
+			return new Response(
+				"Nuh-uh, don't even try to access server ports.",
+				{ headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" }, status: 403 }
+			);
+		}
+		if(requestUrl.pathname == "/.env" || requestUrl.pathname == "/.git"){
+			console.debug("Suspicious request to ", request.url);
+			return new Response(
+				"Stop pen-testing my server, this is an on-demand server, pls be kind.",
 				{ headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" }, status: 403 }
 			);
 		}
@@ -78,7 +94,7 @@ export default {
 				return response;
 			}
 		} catch (error) {
-			console.error("Error reaching main server:", error);
+			console.debug("Error reaching main server:", error);
 		}
 
 		// trigger WOL and return waiting room if response is from argo tunnel indicating server down
@@ -90,7 +106,7 @@ export default {
 				{ method: "GET", headers: { "Content-Type": "application/json", "X-API-KEY": env.API_KEY } }
 			);
 		} catch (error) {
-			console.error("Error triggering WOL:", error);
+			console.debug("Error triggering WOL:", error);
 		}
 		return new Response(
 			waiting_room_html,
