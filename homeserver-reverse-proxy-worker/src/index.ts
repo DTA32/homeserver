@@ -110,7 +110,13 @@ export default {
 		}
 		return new Response(
 			waiting_room_html,
-			{ headers: { "Content-Type": "text/html", "Cache-Control": "no-store" }, status: 200 }
+			{ headers:
+					{
+					"Content-Type": "text/html",
+					"Cache-Control": "no-store",
+					"Retry-After": "30",
+					},
+				status: 503 }
 		);
 	},
 } satisfies ExportedHandler<Env>;
