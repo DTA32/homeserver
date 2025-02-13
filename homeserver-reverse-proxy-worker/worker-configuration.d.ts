@@ -3,4 +3,5 @@
 interface Env {
 	WAKE_ENDPOINT: "https://note4x.dta32.my.id/wake";
 	API_KEY: string;
+	DOWN_TOGGLE: string;
 }

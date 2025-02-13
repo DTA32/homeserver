@@ -61,6 +61,63 @@ const waiting_room_html: string = `<!DOCTYPE html>
 </html>
 `
 
+const down_html: string = `<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Server Down - DTA32</title>
+        <style>
+            h1,
+            h2,
+            p {
+                margin: 0;
+            }
+        </style>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body
+        style="
+            background-color: #222932;
+            font-family: 'JetBrains Mono', monospace;
+            font-optical-sizing: auto;
+            font-weight: 4000;
+            font-style: normal;
+
+        "
+    >
+        <main
+            style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                margin: 32px 0;
+                gap: 48px;
+                color: #f5f5f4;
+                text-align: center;
+            "
+        >
+            <h1 style="font-size: 96px">🙏</h1>
+            <div style="display: flex; flex-direction: column; gap: 32px">
+                <h2 style="font-size: 48px">Server Down</h2>
+                <div style="display: flex; flex-direction: column; gap: 24px">
+                    <p style="font-size: 24px">
+                        I'm sorry, my server currently down to some issues.
+                    </p>
+                    <p style="font-size: 20px">Please come back later.</p>
+                </div>
+            </div>
+            <h3 style="font-size: 24px">— DTA32</h3>
+        </main>
+    </body>
+</html>
+`
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		// validate request
@@ -84,6 +141,14 @@ export default {
 			return new Response(
 				"Stop pen-testing my server, this is an on-demand server, pls be kind.",
 				{ headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" }, status: 403 }
+			);
+		}
+
+		// return down page if down toggle is on
+		if(env.DOWN_TOGGLE === "true"){
+			return new Response(
+				down_html,
+				{ headers: { "Content-Type": "text/html", "Cache-Control": "no-store" }, status: 503 }
 			);
 		}
 
